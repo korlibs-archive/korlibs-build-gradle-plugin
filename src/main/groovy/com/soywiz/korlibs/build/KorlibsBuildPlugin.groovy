@@ -6,16 +6,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.maven.MavenDeployer
 import org.gradle.api.artifacts.maven.MavenDeployment
-import org.gradle.api.distribution.Distribution
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Jar
 
 class KorlibsBuildPlugin implements Plugin<Project> {
     @Override
-    void apply(Project project) {
+    void apply(Project rootProject) {
         /*
         repositories {
             jcenter()
@@ -28,7 +26,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
         }
         */
 
-        project.allprojects {
+        rootProject.allprojects {
             repositories {
                 mavenLocal()
                 jcenter()
@@ -96,7 +94,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                         kotlinOptions.sourceMap = true
                     }
 
-                    task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {
+                    project.task(type: Copy, dependsOn: compileKotlin2Js, 'populateNodeModules') {
                         from compileKotlin2Js.destinationDir
 
                         configurations.testCompile.each {
@@ -106,7 +104,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                         into "${buildDir}/node_modules"
                     }
 
-                    task runMocha(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules]) {
+                    project.task(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules], 'runMocha') {
                         doLast {
                             File fileOut = new File(compileTestKotlin2Js.outputFile)
 
@@ -136,17 +134,17 @@ class KorlibsBuildPlugin implements Plugin<Project> {
 
             afterEvaluate {
                 project.configure(project) {
-                    task javadocJar(type: Jar) {
+                    task(type: Jar, 'javadocJar') {
                         classifier = 'javadoc'
                         from 'build/docs/javadoc'
                     }
 
-                    task sourcesJar(type: Jar) {
+                    task(type: Jar, 'sourcesJar') {
                         classifier = 'sources'
                         from sourceSets.main.allSource
                         if (project != rootProject) {
                             if (!plugins.hasPlugin("kotlin-platform-common")) {
-                                ProjectDependency pd = (ProjectDependency)(configurations
+                                ProjectDependency pd = (ProjectDependency) (configurations
                                         .findByName("expectedBy")?.dependencies
                                         ?.find { it instanceof ProjectDependency })
                                 if (pd != null) {
@@ -170,7 +168,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
 
                 uploadArchives {
                     repositories {
-                        MavenDeployer {
+                        mavenDeployer {
                             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
                             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
@@ -229,8 +227,9 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                 }
             }
 
-            task deploy(dependsOn: ['install', 'uploadArchives']) {
+            task(dependsOn: ['install', 'uploadArchives'], 'deploy') {
             }
         }
+
     }
 }
