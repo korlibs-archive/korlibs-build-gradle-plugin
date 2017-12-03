@@ -7,7 +7,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 ext.baseGroup = "com.soywiz"
-version = "0.1.1-SNAPSHOT"
+version = "0.1.1"
 group = "gradle.plugin.$baseGroup"
 
 repositories {
