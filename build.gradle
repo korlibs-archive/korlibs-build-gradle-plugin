@@ -6,8 +6,9 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-version = "0.1"
-group = "com.soywiz"
+ext.baseGroup = "com.soywiz"
+version = "0.1.1-SNAPSHOT"
+group = "gradle.plugin.$baseGroup"
 
 repositories {
 	jcenter()
@@ -27,7 +28,7 @@ pluginBundle {
 
 	plugins {
 		korlibsBuildPlugin {
-			id = "${group}.${project.name}"
+			id = "${baseGroup}.${project.name}"
 			displayName = 'Korlibs Build Gradle Plugin'
 		}
 	}
