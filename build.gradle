@@ -3,17 +3,15 @@ plugins {
 }
 
 apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 version = "0.1"
-group = "com.soywiz.korlibs"
+group = "com.soywiz"
 
 repositories {
 	jcenter()
-}
-
-dependencies {
-	compile gradleApi()
-	compile localGroovy() //not needed for Java plugins
+	mavenLocal()
 }
 
 dependencies {
@@ -29,8 +27,19 @@ pluginBundle {
 
 	plugins {
 		korlibsBuildPlugin {
-			id = 'com.soywiz.korlibs-build'
+			id = "${group}.${project.name}"
 			displayName = 'Korlibs Build Gradle Plugin'
+		}
+	}
+}
+
+publishing {
+	publications {
+		MyPublication(MavenPublication) {
+			from components.java
+			groupId project.group
+			artifactId project.name
+			version "$project.version"
 		}
 	}
 }

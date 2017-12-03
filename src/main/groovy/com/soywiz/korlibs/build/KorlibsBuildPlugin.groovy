@@ -202,7 +202,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                                         } else {
                                             throw new Exception("Unknown license $projectLicense")
                                         }
-                                        Distribution 'repo'
+                                        distribution 'repo'
                                     }
                                 }
 
