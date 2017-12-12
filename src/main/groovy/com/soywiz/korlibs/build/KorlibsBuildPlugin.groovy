@@ -239,7 +239,7 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                 def upperProjectName = projectName.toUpperCase()
                 def verFile = new File(rootProject.rootDir, "$projectName/common/src/main/kotlin/$projectGroupSlash/$projectName/${capitalizedProjectName}Version.kt")
                 verFile.parentFile.mkdirs()
-                verFile.write("package $projectGroup.$projectName\n\ninternal val ${upperProjectName}_VERSION = \"$projectVersion\"")
+                verFile.write("package $projectGroup.$projectName\n\ninternal const val ${upperProjectName}_VERSION = \"$projectVersion\"")
             }
         }
     }
