@@ -26,6 +26,10 @@ class KorlibsBuildPlugin implements Plugin<Project> {
         }
         */
 
+        rootProject.configurations {
+            provided
+        }
+
         rootProject.allprojects {
             repositories {
                 mavenLocal()
@@ -104,7 +108,21 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                         into "${buildDir}/node_modules"
                     }
 
-                    project.task(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules], 'runMocha') {
+                    project.task(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules], 'fixJsForAsync') {
+                        doLast {
+                            File file = new File(compileTestKotlin2Js.outputFile)
+                            if (file.exists()) {
+                                File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
+                                def timeout = 2000
+                                fileOut.text = file.text.replaceAll(
+                                        /(?m)(?s)test\('(.*?)', (false|true), function \(\) \{\s*(.*?);\s*\}\);/,
+                                        'test("$1", $2, function() { this.timeout(' + timeout + '); global.testPromise = null; var res = $3 || (global.testPromise); return (res instanceof Promise) ? res : undefined; });'
+                                )
+                            }
+                        }
+                    }
+
+                    project.task(type: Task, dependsOn: [fixJsForAsync], 'runMocha') {
                         doLast {
                             File fileOut = new File(compileTestKotlin2Js.outputFile)
 
@@ -116,11 +134,20 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                                     cmd = ["/bin/bash", '-c', "mocha '${fileOut}'"]
                                 }
 
+                                if (project.hasProperty('projectNodeModules')) {
+                                    for (nodeModule in projectNodeModules) {
+                                        if (!(new File("$buildDir/node_modules/$nodeModule")).exists()) {
+                                            executeShell("npm link $nodeModule", buildDir)
+                                        }
+                                    }
+                                }
+
                                 ProcessBuilder pb = new ProcessBuilder(cmd as String[])
                                 pb.environment().putAll(System.getenv())
                                 pb.directory(new File("$buildDir/node_modules"))
                                 def p = pb.start()
-                                p.in.eachLine { println(it) }
+                                p.in.eachLine { System.out.println(it) }
+                                p.err.eachLine { System.err.println(it) }
                                 if (p.waitFor() != 0) {
                                     throw new GradleException('error occurred running ' + cmd)
                                 }
@@ -243,6 +270,29 @@ class KorlibsBuildPlugin implements Plugin<Project> {
             }
         }
     }
+
+    static String executeShell(String cmd, File dir = null) {
+        def out = new StringBuilder()
+        def err = new StringBuilder()
+        def acmd
+
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            acmd = "cmd /c $cmd"
+        } else {
+            acmd = cmd
+        }
+        def res
+        if (dir != null) {
+            res = acmd.execute((String[])null, dir)
+        } else {
+            res = acmd.execute()
+        }
+        res.waitForProcessOutput(out, err)
+        //println("out: $out")
+        //println("err: $err")
+        return out.toString()
+    }
+
 
     static String capitalize(String str) { return str[0].toUpperCase() + str[1..-1] }
 }
