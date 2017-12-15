@@ -6,7 +6,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-version = "0.1.5"
+version = "0.1.6-SNAPSHOT"
 group = "com.soywiz"
 
 repositories {
