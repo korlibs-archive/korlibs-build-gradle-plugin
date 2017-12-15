@@ -264,7 +264,12 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                 def projectGroupSlash = projectGroup.replace('.', '/')
                 def capitalizedProjectName = capitalize(projectName)
                 def upperProjectName = projectName.toUpperCase()
-                def verFile = new File(rootProject.rootDir, "$projectName/common/src/main/kotlin/$projectGroupSlash/$projectName/${capitalizedProjectName}Version.kt")
+                def verFile
+                if (new File(rootProject.rootDir, "$projectName/common").exists()) {
+                    verFile = new File(rootProject.rootDir, "$projectName/common/src/main/kotlin/$projectGroupSlash/$projectName/${capitalizedProjectName}Version.kt")
+                } else {
+                    verFile = new File(rootProject.rootDir, "src/main/kotlin/$projectGroupSlash/$projectName/${capitalizedProjectName}Version.kt")
+                }
                 verFile.parentFile.mkdirs()
                 verFile.write("package $projectGroup.$projectName\n\ninternal const val ${upperProjectName}_VERSION = \"$projectVersion\"")
             }
