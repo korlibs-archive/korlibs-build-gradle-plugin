@@ -115,10 +115,13 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                             if (file.exists()) {
                                 File fileOut = new File(file.absolutePath + ".fix.js")
                                 def timeout = 2000
-                                fileOut.text = file.text.replaceAll(
-                                        /(?m)(?s)test\('(.*?)', (false|true), function \(\) \{\s*(.*?);\s*\}\);/,
-                                        'test("$1", $2, function() { this.timeout(' + timeout + '); global.testPromise = null; var res = $3 || (global.testPromise); return (res instanceof Promise) ? res : undefined; });'
-                                )
+                                fileOut.text = file.text.replaceAll(/(?m)(?s)test\('(.*?)', (false|true), function \(\) \{\s*(.*?);\s*\}\);/) { c ->
+                                    String name = c[1]
+                                    String disabled = c[2]
+                                    String body = c[3]
+                                    def rbody = body.startsWith("return") ? body.substring(6) : body
+                                    return 'test("' + name + '", ' + disabled + ', function() { this.timeout(' + timeout + '); global.testPromise = null; var res = (' + rbody + ') || (global.testPromise); return (res instanceof Promise) ? res : undefined; });'
+                                }
                             }
                         }
                     }
@@ -131,9 +134,9 @@ class KorlibsBuildPlugin implements Plugin<Project> {
                             if (fileOut.exists()) {
                                 String[] cmd
                                 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                                    cmd = ["cmd", "/c", "mocha.cmd" as String, fileOut]
+                                    cmd = ["cmd", "/c", "mocha.cmd" as String, "${fileOut}.fix.js"]
                                 } else {
-                                    cmd = ["/bin/bash", '-c', "mocha '${fileOut}'"]
+                                    cmd = ["/bin/bash", '-c', "mocha '${fileOut}.fix.js'"]
                                 }
 
                                 if (project.hasProperty('projectNodeModules')) {
