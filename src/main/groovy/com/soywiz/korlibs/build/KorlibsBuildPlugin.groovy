@@ -110,9 +110,10 @@ class KorlibsBuildPlugin implements Plugin<Project> {
 
                     project.task(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules], 'fixJsForAsync') {
                         doLast {
-                            File file = new File(compileTestKotlin2Js.outputFile)
+                            def k2jsOutputFile = compileTestKotlin2Js.outputFile
+                            File file = (k2jsOutputFile instanceof File) ? k2jsOutputFile : new File("$k2jsOutputFile")
                             if (file.exists()) {
-                                File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
+                                File fileOut = new File(file.absolutePath + ".fix.js")
                                 def timeout = 2000
                                 fileOut.text = file.text.replaceAll(
                                         /(?m)(?s)test\('(.*?)', (false|true), function \(\) \{\s*(.*?);\s*\}\);/,
@@ -124,7 +125,8 @@ class KorlibsBuildPlugin implements Plugin<Project> {
 
                     project.task(type: Task, dependsOn: [fixJsForAsync], 'runMocha') {
                         doLast {
-                            File fileOut = new File(compileTestKotlin2Js.outputFile)
+                            def k2jsOutputFile = compileTestKotlin2Js.outputFile
+                            File fileOut = (k2jsOutputFile instanceof File) ? k2jsOutputFile : new File("$k2jsOutputFile")
 
                             if (fileOut.exists()) {
                                 String[] cmd
